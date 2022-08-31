@@ -47,7 +47,32 @@ similar) customers for the customers with ids listed below (customer id=line num
 1200, 3650, 10400, 14930, 22330, 25671, 29311, 34650, 39200, 42000
 For this task your script must take as input the customer-id and return the list of her
 10 nearest neighbors (most similar), along with the corresponding similarity score.
-
+ 
+#### 4) Customer rating prediction
+For this assignment you will implement a classification algorithm which, for a given
+customer, will predict his rating (poor, fair, good, very good, excellent) for the bank.
+In order to implement the classification for a given customer you need to:
+1) Calculate the similarities between the given customer and all other customers and
+compute his 10-nn (most similar) customers. IMPORTANT: In the similarity
+calculations for this step you need to exclude the customer rating attribute.
+2) Based only on the 10 most similar customers computed in the previous step, predict
+the customer rating rank using:
+ The average rating rank of the 10 most similar customers (rounded to the
+nearest integer).
+ The weighted average rating rank of the 10 most similar customers (rounded
+to the nearest integer).
+Weighted average rating_rank = ∑ [similarity(i) ∗ rank(rating(i))]10
+i=1
+∑ similarity(i)10
+i=1
+Where:
+o rating(i) = the rating of the i-th nearest neighbor (i=1 for the most
+similar customer)
+o similarity(i) = the similarity of the i-th nearest neighbor with the
+given customer
+3) For the evaluation of your classification algorithm you will use the 50 first records
+of the bank dataset and predict the rating for them. Then, for all n=50 records
+calculate the Mean Prediction Error for both prediction methods.
 
 
 # Assignment 2 ( Neo4j ) 
