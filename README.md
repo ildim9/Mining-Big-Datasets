@@ -1,6 +1,6 @@
 # Mining Big Datasets
  
-# Assignment ( Data Mining ) 
+# Assignment 1 ( Data Mining ) 
 
 The goal of this assignment is to implement a simple workflow that will assess the
 similarity between bank customers and suggest for any input customer a list of his/her
