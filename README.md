@@ -57,7 +57,7 @@ and flights between airports. In particular, the dataset contains 7698 Airports,
 Airlines, 6956 Cities, 237 Countries and 65.935 Flights between Airports. You can
 download the dataset (Airline Dataset) from moodle in csv format. The dataset
 contains 3 csv files and a description for the attributes in each file.
-#####Property graph model
+##### Property graph model
 You are asked to model the data as a property graph by designing the appropriate
 entities and assigning the relevant labels, types and properties. For your modeling,
 you need to study the details of all the files that describe the airline network and
