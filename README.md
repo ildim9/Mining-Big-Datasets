@@ -9,7 +9,7 @@ the rating of the customer to the bank. To calculate the similarity between cust
 you will first have to compute the dissimilarity for every given attribute as discussed
 in lecture “Measuring Data Similarity”.
 In order to fulfill this assignment, you will have to perform the following tasks:
-##### 1) Import and pre-process the dataset with customers
+#### 1) Import and pre-process the dataset with customers
 Download the bank.csv dataset from moodle. This dataset is related with direct
 marketing campaigns of a Portuguese banking institution. The marketing campaigns
 were based on phone calls to access the opinion of the customer to the bank service
@@ -30,7 +30,7 @@ Products: An array containing the bank products (1-20) each customer has.
 For any numerical values missing, you should replace them with the average value of
 the attribute in the dataset (rounded to the nearest integer). The replaced average
 values calculated should be reported in the pdf.
-##### 2) Compute data (dis-)similarity
+#### 2) Compute data (dis-)similarity
 To assess the similarity between the customers you could form the dissimilarity matrix
 for all given attributes. As described in lecture “Measuring Data Similarity”, for every
 given attribute you first distinguish its type (categorical, ordinal, numerical or set) and
