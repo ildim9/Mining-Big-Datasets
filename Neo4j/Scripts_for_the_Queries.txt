@@ -1,0 +1,146 @@
+#####CREATING CONSTRAINT:
+CREATE CONSTRAINT ON (a:Airport) ASSERT a.AirportID IS UNIQUE;
+CREATE CONSTRAINT ON (a:Airport) ASSERT a.Name IS UNIQUE;
+
+
+#####CREATING AIRPORT NODES:
+LOAD CSV WITH HEADERS
+FROM "file:///airports.csv" AS line
+WITH DISTINCT line
+CREATE (n:Airport { id: line.AirportID,name: line.Name, country: line.Country, city: line.City, lat: line.Latitude, long: line.Longitude, IATA: line.IATA, ICAO: line.ICAO })
+
+
+#####CREATING ROUTE NODES:
+LOAD CSV WITH HEADERS
+FROM "file:///routes.csv" AS line
+WITH DISTINCT line
+CREATE (n:Route { source: line.Source, destination: line.Destination, stops: line.Stops, equip: line.Equipment, airline: line.Airline,sourceID: line.SourceID,destinationID: line.DestinationID,AID: line.AirlineID})
+
+
+#####CREATING AIRLINES NODES (and then deleting the "Unknown" airline):
+LOAD CSV WITH HEADERS
+FROM "file:///airlines.csv" AS line
+WITH DISTINCT line
+CREATE (n:Airlines { name: line.Name, IATA: line.IATA, ICAO: line.ICAO, country: line.Country, AID:line.AirlineID})
+
+MATCH (n:Airlines {name: 'Unknown'})
+DETACH DELETE n
+
+
+
+#NODES BETWEEN AIRPORTS AND FLIGHTS WITH ATTRIBUTES WITHIN EACH RELATIONSHIP 
+MATCH
+  (c:Airport),
+  (b:Route)
+WHERE c.id = b.destinationID
+CREATE (b)-[r:To{airline:b.airline,AID:b.AID}]->(c)
+RETURN type(r)
+
+MATCH
+  (c:Airport),
+  (b:Route)
+WHERE c.id = b.sourceID
+CREATE (b)-[r:From{airline:b.airline,AID:b.AID}]->(c) 
+RETURN type(r)
+
+
+#### QUESTION 1
+MATCH (n:Airport)
+WITH n, (SIZE((n)-[:To]-())) as NUMBER_OF_INCOMING_FLIGHTS, (SIZE((n)-[:From]-())) as NUMBER_OF_OUTCOMING_FLIGHTS
+RETURN n.name as AIRPORT, NUMBER_OF_INCOMING_FLIGHTS, NUMBER_OF_OUTCOMING_FLIGHTS, (NUMBER_OF_INCOMING_FLIGHTS+NUMBER_OF_OUTCOMING_FLIGHTS) as TOTAL_NUMBER_OF_FLIGHTS 
+ORDER BY TOTAL_NUMBER_OF_FLIGHTS DESC LIMIT 5
+
+#### Question 2
+MATCH (n:Airport)
+RETURN n.country AS COUNTRY, COUNT(n.country) AS NUMBER_OF_AIRPORTS
+ORDER BY NUMBER_OF_AIRPORTS DESC LIMIT 5
+
+#### Question 3
+MATCH (n:Airport)-[:From]-(r:Route)-[:To]-(a:Airport),(e:Airlines)
+WHERE e.IATA=r.airline AND (n.country="Greece" XOR a.country="Greece")
+RETURN e.name AS AIRLINE, COUNT(r.airline) AS NUMBER_OF_FLIGHTS
+ORDER BY NUMBER_OF_FLIGHTS DESC LIMIT 5
+
+#### SECOND WAY
+MATCH (n:Airport)-[:From]-(r:Route)-[:To]-(a:Airport),(e:Airlines)
+WHERE e.AID=r.AID AND (n.country="Greece" XOR a.country="Greece")
+RETURN e.name AS AIRLINE, COUNT(r.airline) AS NUMBER_OF_FLIGHTS
+ORDER BY NUMBER_OF_FLIGHTS DESC LIMIT 5
+
+#### Question 4 
+MATCH (n:Airport{country:"Germany"})-[:From]-(r:Route)-[:To]-(a:Airport{country:"Germany"}),(e:Airlines)
+WHERE e.IATA=r.airline
+RETURN e.name AS AIRLINE, COUNT(r.airline) AS NUMBER_OF_FLIGHTS
+ORDER BY NUMBER_OF_FLIGHTS DESC LIMIT 5
+
+#### SECOND WAY
+MATCH (n:Airport{country:"Germany"})-[:From]-(r:Route)-[:To]-(a:Airport{country:"Germany"}),(e:Airlines)
+WHERE e.AID=r.AID
+RETURN e.name AS AIRLINE, COUNT(r.airline) AS NUMBER_OF_FLIGHTS
+ORDER BY NUMBER_OF_FLIGHTS DESC LIMIT 5
+
+#### Question 5
+MATCH (n:Airport)-[:From]-(r:Route)-[:To]-(a:Airport{country:"Greece"}),(e:Airlines)
+WHERE e.IATA=r.airline and e.country <> 'Greece'
+RETURN e.country AS COUNTRY, COUNT(r.airline) AS NUMBER_OF_FLIGHTS
+ORDER BY NUMBER_OF_FLIGHTS DESC LIMIT 10
+
+#### Question 6
+###### FINDING THE FLIGHTS TO GREECE 
+MATCH ((n:Airport{country:"Greece"})-[a:To]-())
+return count(a)
+
+###### FINDING THE FLIGHTS FROM GREECE 
+MATCH ((n:Airport{country:"Greece"})-[a:From]-())
+return count(a) AS TOTAL_FLIGHTS_FROM_GREECE
+
+###### COMPUTING THE PERCENTAGE 
+MATCH (n:Airport)
+WITH n, (SIZE((n)-[:To]-())) as INBOUND_FLIGHTS, 
+(SIZE((n)-[:From]-())) as OUTBOUND_FLIGHTS
+WHERE n.country='Greece' and INBOUND_FLIGHTS >= 1 and OUTBOUND_FLIGHTS >=1
+RETURN n.city as CITY,
+round(((INBOUND_FLIGHTS + OUTBOUND_FLIGHTS)*1.0/ 1601 )*100,2) as Air_Traffic_Percentage
+order by Air_Traffic_Percentage desc 
+
+
+#### Question 7 
+MATCH (n:Airport)-[:From]-(r:Route)-[:To]-(a:Airport{country:"Greece"})
+WHERE n.country<>"Greece" AND (r.equip="738" OR r.equip="320")
+RETURN r.equip AS PLAIN_TYPE, COUNT(r.airline) AS NUMBER_OF_FLIGHTS
+ORDER BY NUMBER_OF_FLIGHTS DESC LIMIT 5
+
+
+#### Question 8 
+MATCH (n:Airport)-[:From]-(r:Route)-[:To]-(a:Airport)
+WITH  n , a , 
+point({longitude : toFloat(n.long), latitude : toFloat(n.lat)}) AS  p1, 
+point({longitude : toFloat(a.long), latitude : toFloat(a.lat)}) AS  p2
+WHERE n.name > a.name
+return  distinct n.name as FROM ,a.name as TO , round(point.distance(p1,p2)/1000,2) AS DISTANCE
+ORDER BY DISTANCE DESC limit 5
+
+
+#### Question 9 
+MATCH (n:Airport)-[:From]-(r:Route)-[:To]-(a:Airport)
+WHERE (a.city="Berlin")
+WITH collect(n) AS AIRPORTS
+MATCH (n:Airport)-[:From]-(r:Route)-[:To]-(a:Airport)
+WHERE ALL(n IN AIRPORTS WHERE NOT EXISTS((n:Airport)-[:From]-(r:Route)-[:To]-(a:Airport)))
+RETURN n.city AS CITY, COUNT(r) AS FLIGHTS
+ORDER BY FLIGHTS DESC LIMIT 5
+
+
+#### Question 10 
+MATCH 
+ (n:Airport{city:'Athens'}),
+ (a:Airport{city:'Sydney'}),
+ p= allShortestPaths((n)-[*]-(a))
+with distinct [path in nodes(p) | path.city ] as Sortest_Paths
+Order by  Sortest_Paths desc 
+return [val in Sortest_Paths WHERE val is not null] as SORTESTS_PATHS
+
+
+
+
+
